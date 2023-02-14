@@ -10,30 +10,28 @@ import { localStorageMock } from "../__mocks__/localStorage.js";
 import { error } from "console";
 import Bills from "../containers/Bills";
 import router from "../app/Router.js";
-import { formatDate, formatStatus } from "../app/format.js";
-import NewBill from "../containers/NewBill.js";
-import store from "../__mocks__/store.js";
+import store from "../__mocks__/store";
 
-jest.mock("../containers/NewBill");
-store.bills.list = jest.fn(() => {});
+beforeEach(() => {
+  Object.defineProperty(window, "localStorage", {
+    value: localStorageMock,
+  });
+  window.localStorage.setItem(
+    "user",
+    JSON.stringify({
+      type: "Employee",
+    })
+  );
+  const root = document.createElement("div");
+  root.setAttribute("id", "root");
+  document.body.append(root);
+  router();
+  window.onNavigate(ROUTES_PATH.Bills);
+});
 
 describe("Given I am connected as an employee", () => {
   describe("When I am on Bills Page", () => {
     test("Then bill icon in vertical layout should be highlighted", async () => {
-      Object.defineProperty(window, "localStorage", {
-        value: localStorageMock,
-      });
-      window.localStorage.setItem(
-        "user",
-        JSON.stringify({
-          type: "Employee",
-        })
-      );
-      const root = document.createElement("div");
-      root.setAttribute("id", "root");
-      document.body.append(root);
-      router();
-      window.onNavigate(ROUTES_PATH.Bills);
       await waitFor(() => screen.getByTestId("icon-window"));
       const windowIcon = screen.getByTestId("icon-window");
       expect(windowIcon).toBeTruthy();
@@ -58,26 +56,12 @@ describe("Given I am connected as an employee", () => {
         body.appendChild(template);
         const bills = new Bills({ document, onNavigate });
         bills.handleClickNewBill();
-        expect(global.window.location.href).toContain("employee/bill/new");
+        expect(global.window.location.href).toContain(ROUTES_PATH.NewBill);
       });
     });
 
     describe("When I click on the icon eye", () => {
       test("handleClickIconEye should be called", async () => {
-        Object.defineProperty(window, "localStorage", {
-          value: localStorageMock,
-        });
-        window.localStorage.setItem(
-          "user",
-          JSON.stringify({
-            type: "Employee",
-          })
-        );
-        const root = document.createElement("div");
-        root.setAttribute("id", "root");
-        document.body.append(root);
-        router();
-        window.onNavigate(ROUTES_PATH.Bills);
         await waitFor(() => screen.getAllByTestId("icon-eye"));
         const iconEye = screen.getAllByTestId("icon-eye");
         const bills = new Bills({
@@ -91,20 +75,6 @@ describe("Given I am connected as an employee", () => {
         expect(spy).toHaveBeenCalled();
       });
       test("modaleFile should be visible", async () => {
-        Object.defineProperty(window, "localStorage", {
-          value: localStorageMock,
-        });
-        window.localStorage.setItem(
-          "user",
-          JSON.stringify({
-            type: "Employee",
-          })
-        );
-        const root = document.createElement("div");
-        root.setAttribute("id", "root");
-        document.body.append(root);
-        router();
-        window.onNavigate(ROUTES_PATH.Bills);
         await waitFor(() => screen.getAllByTestId("icon-eye"));
         const iconEye = screen.getAllByTestId("icon-eye");
         iconEye[0].click();
@@ -116,20 +86,6 @@ describe("Given I am connected as an employee", () => {
 
     describe("getBills is called", () => {
       test("it should return the bills that are in the store", () => {
-        Object.defineProperty(window, "localStorage", {
-          value: localStorageMock,
-        });
-        window.localStorage.setItem(
-          "user",
-          JSON.stringify({
-            type: "Employee",
-          })
-        );
-        const root = document.createElement("div");
-        root.setAttribute("id", "root");
-        document.body.append(root);
-        router();
-        window.onNavigate(ROUTES_PATH.Bills);
         const bills = new Bills({
           document,
           onNavigate,
@@ -168,7 +124,6 @@ describe("Given I am connected as an employee", () => {
           status: "refused",
           commentAdmin: "en fait non",
         };
-
         // On mock le store pour qu'il ait 2 tickets.
         store.bills = jest.fn(() => ({
           list() {
@@ -180,20 +135,6 @@ describe("Given I am connected as an employee", () => {
         );
       });
       test("if the data was corrupted, the data is unformatted", async () => {
-        Object.defineProperty(window, "localStorage", {
-          value: localStorageMock,
-        });
-        window.localStorage.setItem(
-          "user",
-          JSON.stringify({
-            type: "Employee",
-          })
-        );
-        const root = document.createElement("div");
-        root.setAttribute("id", "root");
-        document.body.append(root);
-        router();
-        window.onNavigate(ROUTES_PATH.Bills);
         const bills = new Bills({
           document,
           onNavigate,
@@ -227,6 +168,41 @@ describe("Given I am connected as an employee", () => {
           returnedBill = bill;
         });
         expect(returnedBill[0].date).toEqual(corruptedBill.date);
+      });
+    });
+    describe("When the store's list returns a 404 error", () => {
+      test("The error and its type are displayed", async () => {
+        store.bills = jest.fn(() => ({
+          list() {
+            return Promise.reject(new Error("Erreur 404"));
+          },
+        }));
+
+        // DOM construction
+        document.body.innerHTML = BillsUI({ error: "Erreur 404" });
+        // await response
+        const message = await screen.getByText(/Erreur 404/);
+
+        // expected result
+        expect(message).toBeTruthy();
+      });
+    });
+
+    describe("When the store's list returns a 500 error", () => {
+      test("The error and its type are displayed", async () => {
+        store.bills = jest.fn(() => ({
+          list() {
+            return Promise.reject(new Error("Erreur 500"));
+          },
+        }));
+
+        // DOM construction
+        document.body.innerHTML = BillsUI({ error: "Erreur 500" });
+        // await response
+        const message = await screen.getByText(/Erreur 500/);
+
+        // expected result
+        expect(message).toBeTruthy();
       });
     });
   });
