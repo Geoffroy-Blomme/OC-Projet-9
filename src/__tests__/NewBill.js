@@ -3,6 +3,7 @@
  */
 
 import { fireEvent, screen } from "@testing-library/dom";
+import "@testing-library/jest-dom/extend-expect";
 import NewBillUI from "../views/NewBillUI.js";
 import NewBill from "../containers/NewBill.js";
 import store from "../__mocks__/store.js";
@@ -66,6 +67,22 @@ describe("Given I am connected as an employee", () => {
         expect(handleSubmit).toHaveBeenCalled();
         expect(global.window.location.href).toContain(ROUTES_PATH.Bills);
       });
+    });
+    it("should require the date input", () => {
+      const dateInput = screen.getByTestId("datepicker");
+      expect(dateInput).toBeRequired();
+    });
+    it("should require the amount input", () => {
+      const amountInput = screen.getByTestId("amount");
+      expect(amountInput).toBeRequired();
+    });
+    it("should require the pct input", () => {
+      const pctInput = screen.getByTestId("pct");
+      expect(pctInput).toBeRequired();
+    });
+    it("should require the file input", () => {
+      const fileInput = screen.getByTestId("file");
+      expect(fileInput).toBeRequired();
     });
   });
 });
