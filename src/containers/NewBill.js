@@ -22,19 +22,15 @@ export default class NewBill {
     const file = this.document.querySelector(`input[data-testid="file"]`)
       .files[0];
     const filePath = e.target.value.split(/\\/g);
+    console.log(e.target.value);
     const fileName = filePath[filePath.length - 1];
-    console.log(fileName);
     const acceptedExtensions = ["png", "jpeg", "jpg"];
     const fileExtensionRegex = /(?:\.([^.]+))?$/;
     const fileExtension = fileExtensionRegex.exec(fileName)[1];
     const fileExtensionIscorrect = acceptedExtensions.includes(fileExtension);
     const formData = new FormData();
     const email = JSON.parse(localStorage.getItem("user")).email;
-    if (fileExtensionIscorrect) {
-      formData.append("file", file);
-    } else {
-      console.log(e.currentTarget);
-    }
+    formData.append("file", file);
     formData.append("email", email);
     this.store
       .bills()
@@ -45,9 +41,14 @@ export default class NewBill {
         },
       })
       .then(({ fileUrl, key }) => {
-        this.billId = key;
-        this.fileUrl = fileUrl;
-        this.fileName = fileName;
+        if (fileExtensionIscorrect) {
+          this.billId = key;
+          this.fileUrl = fileUrl;
+          this.fileName = fileName;
+        } else {
+          console.log(e.currentTarget);
+          this.document.querySelector(`input[data-testid="file"]`).value = "";
+        }
       })
       .catch((error) => console.error(error));
   };
